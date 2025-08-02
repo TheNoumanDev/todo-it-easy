@@ -14,7 +14,6 @@ class QuickAddForm extends ConsumerStatefulWidget {
 
 class _QuickAddFormState extends ConsumerState<QuickAddForm> {
   final _titleController = TextEditingController();
-  final _notesController = TextEditingController();
 
   TodoTag _selectedTag = TodoTag.work; // Default to work
   TodoPriority _selectedPriority = TodoPriority.medium;
@@ -34,7 +33,6 @@ class _QuickAddFormState extends ConsumerState<QuickAddForm> {
   @override
   void dispose() {
     _titleController.dispose();
-    _notesController.dispose();
     super.dispose();
   }
 
@@ -68,23 +66,7 @@ class _QuickAddFormState extends ConsumerState<QuickAddForm> {
 
           const SizedBox(height: 16),
 
-          // Notes field (bigger, replacing description)
-          TextField(
-            controller: _notesController,
-            decoration: InputDecoration(
-              hintText: 'Add notes about what needs to be done...',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              isDense: true,
-            ),
-            maxLines: 4,
-            minLines: 3,
-          ),
-
-          const SizedBox(height: 16),
-
-          // Category and Priority row
+          // Category row
           Row(
             children: [
               // Tag selection
@@ -121,17 +103,14 @@ class _QuickAddFormState extends ConsumerState<QuickAddForm> {
                   ],
                 ),
               ),
-
-              // Priority selection
             ],
           ),
 
           const SizedBox(height: 16),
 
-          // Category and Priority row
+          // Priority row
           Row(
             children: [
-              // Tag selection
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -179,66 +158,6 @@ class _QuickAddFormState extends ConsumerState<QuickAddForm> {
                     ),
                   ],
                 ),
-              ),
-
-              // Priority selection
-            ],
-          ),
-
-          const SizedBox(height: 16),
-
-          // Due date - simple input
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Due Date (optional)',
-                style: AppConstants.captionStyle.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      decoration: InputDecoration(
-                        hintText: 'DD/MM/YYYY',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        prefixIcon: Icon(
-                          Icons.calendar_today,
-                          color: Colors.grey[600],
-                          size: 16,
-                        ),
-                        isDense: true,
-                        contentPadding: const EdgeInsets.all(10),
-                      ),
-                      style: AppConstants.captionStyle,
-                      readOnly: true,
-                      onTap: _selectDueDate,
-                      controller: TextEditingController(
-                        text: _dueDate != null
-                            ? '${_dueDate!.day.toString().padLeft(2, '0')}/${_dueDate!.month.toString().padLeft(2, '0')}/${_dueDate!.year}'
-                            : '',
-                      ),
-                    ),
-                  ),
-                  if (_dueDate != null) ...[
-                    const SizedBox(width: 8),
-                    IconButton(
-                      onPressed: () => setState(() => _dueDate = null),
-                      icon: Icon(
-                        Icons.clear,
-                        size: 18,
-                        color: Colors.grey[600],
-                      ),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
-                  ],
-                ],
               ),
             ],
           ),
@@ -294,8 +213,8 @@ class _QuickAddFormState extends ConsumerState<QuickAddForm> {
 
     ref.read(todoListProvider.notifier).addTodo(
           title: _titleController.text.trim(),
-          description: '', // No longer using description
-          notes: _notesController.text.trim(),
+          description: '', // No description
+          notes: '', // No notes in quick add
           dueDate: _dueDate,
           priority: _selectedPriority,
           tag: _selectedTag,
@@ -303,7 +222,6 @@ class _QuickAddFormState extends ConsumerState<QuickAddForm> {
 
     // Clear form
     _titleController.clear();
-    _notesController.clear();
     setState(() {
       _selectedTag = TodoTag.work; // Reset to default
       _selectedPriority = TodoPriority.medium;

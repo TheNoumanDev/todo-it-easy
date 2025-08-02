@@ -21,7 +21,6 @@ class StatusColumn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: AppConstants.columnWidth,
       decoration: BoxDecoration(
         color: isHighlighted 
             ? _getStatusColor(status).withOpacity(0.1)
@@ -39,7 +38,6 @@ class StatusColumn extends StatelessWidget {
         ),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Column header
           Container(
@@ -90,7 +88,7 @@ class StatusColumn extends StatelessWidget {
               ],
             ),
           ),
-          // Todo cards
+          // Todo cards - Takes all remaining space
           Expanded(
             child: todos.isEmpty
                 ? Center(
@@ -122,7 +120,7 @@ class StatusColumn extends StatelessWidget {
                           elevation: 8,
                           borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
                           child: Container(
-                            width: AppConstants.columnWidth - 32,
+                            width: 250, // Fixed width for feedback
                             child: TodoCard(todo: todos[index], isDragging: true),
                           ),
                         ),
@@ -148,8 +146,6 @@ class StatusColumn extends StatelessWidget {
         return Colors.orange[600]!;
       case TodoStatus.doing:
         return Colors.blue[600]!;
-      case TodoStatus.needsReview:
-        return Colors.purple[600]!;
       case TodoStatus.done:
         return Colors.green[600]!;
     }
@@ -163,8 +159,6 @@ class StatusColumn extends StatelessWidget {
         return Icons.schedule;
       case TodoStatus.doing:
         return Icons.play_circle;
-      case TodoStatus.needsReview:
-        return Icons.rate_review;
       case TodoStatus.done:
         return Icons.check_circle;
     }

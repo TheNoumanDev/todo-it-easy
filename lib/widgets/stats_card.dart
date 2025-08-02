@@ -56,14 +56,6 @@ class StatsCard extends StatelessWidget {
                 ),
                 Expanded(
                   child: _buildStatItem(
-                    'Review',
-                    stats.needsReview,
-                    Colors.purple[600]!,
-                    Icons.rate_review,
-                  ),
-                ),
-                Expanded(
-                  child: _buildStatItem(
                     'Done',
                     stats.completed,
                     Colors.green[600]!,

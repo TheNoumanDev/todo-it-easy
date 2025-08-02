@@ -17,8 +17,6 @@ class AddTodoDialog extends ConsumerStatefulWidget {
 class _AddTodoDialogState extends ConsumerState<AddTodoDialog> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
-  final _descriptionController = TextEditingController();
-  final _notesController = TextEditingController();
   
   late TodoTag _selectedTag;
   TodoPriority _selectedPriority = TodoPriority.medium;
@@ -33,8 +31,6 @@ class _AddTodoDialogState extends ConsumerState<AddTodoDialog> {
   @override
   void dispose() {
     _titleController.dispose();
-    _descriptionController.dispose();
-    _notesController.dispose();
     super.dispose();
   }
 
@@ -87,33 +83,6 @@ class _AddTodoDialogState extends ConsumerState<AddTodoDialog> {
                   }
                   return null;
                 },
-              ),
-              
-              const SizedBox(height: 16),
-              
-              // Description field
-              TextFormField(
-                controller: _descriptionController,
-                decoration: const InputDecoration(
-                  labelText: 'Description',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.description),
-                ),
-                maxLines: 2,
-              ),
-              
-              const SizedBox(height: 16),
-              
-              // Notes field
-              TextFormField(
-                controller: _notesController,
-                decoration: const InputDecoration(
-                  labelText: 'Notes',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.note),
-                  hintText: 'What needs to be done?',
-                ),
-                maxLines: 3,
               ),
               
               const SizedBox(height: 16),
@@ -296,8 +265,8 @@ class _AddTodoDialogState extends ConsumerState<AddTodoDialog> {
     if (_formKey.currentState!.validate()) {
       ref.read(todoListProvider.notifier).addTodo(
         title: _titleController.text.trim(),
-        description: _descriptionController.text.trim(),
-        notes: _notesController.text.trim(),
+        description: '', // Empty description
+        notes: '', // Empty notes
         dueDate: _dueDate,
         priority: _selectedPriority,
         tag: _selectedTag,

@@ -46,6 +46,12 @@ dependencies:
   # Date handling
   intl: ^0.19.0
 
+  google_sign_in: ^6.1.5
+  googleapis: ^11.4.0
+  googleapis_auth: ^1.4.1
+  http: ^1.1.0
+  url_launcher: ^6.2.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -54,6 +60,8 @@ dev_dependencies:
   # Code generation
   build_runner: ^2.4.7
   json_serializable: ^6.7.1
+  flutter_quill: ^9.3.21
+  flutter_quill_extensions: ^9.3.21
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

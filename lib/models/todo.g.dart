@@ -38,7 +38,6 @@ const _$TodoStatusEnumMap = {
   TodoStatus.todo: 'todo',
   TodoStatus.pending: 'pending',
   TodoStatus.doing: 'doing',
-  TodoStatus.needsReview: 'needsReview',
   TodoStatus.done: 'done',
 };
 

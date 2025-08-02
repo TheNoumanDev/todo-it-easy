@@ -61,7 +61,6 @@ final todoStatsProvider = Provider<TodoStats>((ref) {
     todo: allTodos.where((t) => t.status == TodoStatus.todo).length,
     inProgress: allTodos.where((t) => t.status == TodoStatus.doing).length,
     completed: allTodos.where((t) => t.status == TodoStatus.done).length,
-    needsReview: allTodos.where((t) => t.status == TodoStatus.needsReview).length,
     pending: allTodos.where((t) => t.status == TodoStatus.pending).length,
     workCount: workTasks.length,
     personalCount: personalTasks.length,
@@ -73,7 +72,6 @@ class TodoStats {
   final int todo;
   final int inProgress;
   final int completed;
-  final int needsReview;
   final int pending;
   final int workCount;
   final int personalCount;
@@ -83,7 +81,6 @@ class TodoStats {
     required this.todo,
     required this.inProgress,
     required this.completed,
-    required this.needsReview,
     required this.pending,
     required this.workCount,
     required this.personalCount,
@@ -146,7 +143,7 @@ class TodoListNotifier extends StateNotifier<List<Todo>> {
       if (todo.id == id) {
         // For personal tasks, ensure status is valid
         if (todo.tag == TodoTag.personal) {
-          if (newStatus == TodoStatus.doing || newStatus == TodoStatus.needsReview) {
+          if (newStatus == TodoStatus.doing) {
             // Convert invalid statuses to pending for personal tasks
             return todo.copyWith(status: TodoStatus.pending);
           }
@@ -186,7 +183,7 @@ class TodoListNotifier extends StateNotifier<List<Todo>> {
   void migratePersonalTaskStatuses() {
     state = state.map((todo) {
       if (todo.tag == TodoTag.personal) {
-        if (todo.status == TodoStatus.doing || todo.status == TodoStatus.needsReview) {
+        if (todo.status == TodoStatus.doing) {
           return todo.copyWith(status: TodoStatus.pending);
         }
       }
