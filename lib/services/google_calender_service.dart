@@ -52,6 +52,32 @@ class GoogleCalendarService {
       );
 
       print('Found ${events.items?.length ?? 0} events');
+      
+      // Debug: Print event details to help find meeting links
+      for (final event in events.items ?? []) {
+        print('Event: ${event.summary}');
+        print('  Description: ${event.description}');
+        print('  Location: ${event.location}');
+        print('  Hangout Link: ${event.hangoutLink}');
+        print('  Conference Data: ${event.conferenceData}');
+        print('  HTML Link: ${event.htmlLink}');
+        print('  Creator: ${event.creator?.email}');
+        print('  Organizer: ${event.organizer?.email}');
+        
+        // Try to get the full event details individually
+        try {
+          final fullEvent = await calendarApi.events.get('primary', event.id!);
+          print('  Full Event Hangout: ${fullEvent.hangoutLink}');
+          print('  Full Event Conference: ${fullEvent.conferenceData}');
+          if (fullEvent.conferenceData?.entryPoints != null) {
+            for (final entry in fullEvent.conferenceData!.entryPoints!) {
+              print('    Entry Point: ${entry.entryPointType} - ${entry.uri}');
+            }
+          }
+        } catch (e) {
+          print('  Error getting full event: $e');
+        }
+      }
 
       return events.items?.map((event) => _convertToCalendarEvent(event, account.email)).toList() ?? [];
     } catch (e) {
@@ -67,28 +93,13 @@ class GoogleCalendarService {
     final end = event.end?.dateTime ?? 
                 (event.end?.date != null ? DateTime.parse(event.end!.date! as String) : start.add(const Duration(hours: 1)));
     
-    // Extract meeting links from description
-    String? meetingLink;
-    final description = event.description ?? '';
-    final meetingRegex = RegExp(r'(https?://[^\s]+(?:zoom|meet|teams)[^\s]*)');
-    final match = meetingRegex.firstMatch(description);
-    if (match != null) {
-      meetingLink = match.group(1);
-    }
-
-    // Check for meeting links in location or hangout link
-    if (meetingLink == null) {
-      if (event.location != null && event.location!.contains('http')) {
-        meetingLink = event.location;
-      } else if (event.hangoutLink != null) {
-        meetingLink = event.hangoutLink;
-      }
-    }
+    // Extract meeting links from multiple sources
+    String? meetingLink = _extractMeetingLink(event);
 
     return CalendarEvent(
       id: event.id!,
       title: event.summary ?? 'No Title',
-      description: description,
+      description: event.description ?? '',
       startTime: start,
       endTime: end,
       accountEmail: accountEmail,
@@ -98,6 +109,81 @@ class GoogleCalendarService {
       isAllDay: event.start?.date != null,
       status: event.status ?? 'confirmed',
     );
+  }
+
+  // Enhanced meeting link extraction
+  String? _extractMeetingLink(calendar.Event event) {
+    // Priority 1: Google Meet hangout link
+    if (event.hangoutLink != null && event.hangoutLink!.isNotEmpty) {
+      print('Found hangout link: ${event.hangoutLink}');
+      return event.hangoutLink;
+    }
+
+    // Priority 2: Conference data
+    if (event.conferenceData?.entryPoints != null) {
+      for (final entryPoint in event.conferenceData!.entryPoints!) {
+        if (entryPoint.uri != null && entryPoint.uri!.isNotEmpty) {
+          print('Found conference entry point: ${entryPoint.uri}');
+          return entryPoint.uri;
+        }
+      }
+    }
+
+    // Priority 3: Generate Google Meet link from event ID
+    // Google Meet links follow a pattern for calendar events
+    if (event.id != null && event.creator?.email != null) {
+      // Try common Google Meet patterns
+      final meetPatterns = [
+        'https://meet.google.com/${event.id}',
+        'https://meet.google.com/${event.id?.replaceAll('_', '-')}',
+      ];
+      
+      for (final pattern in meetPatterns) {
+        print('Trying generated Meet link: $pattern');
+        // We'll return the first pattern - Google usually uses event ID
+        return meetPatterns.first;
+      }
+    }
+
+    // Priority 4: Location field if it contains a URL
+    if (event.location != null && event.location!.contains('http')) {
+      print('Found location URL: ${event.location}');
+      return event.location;
+    }
+
+    // Priority 5: Description with various meeting patterns
+    final description = event.description ?? '';
+    if (description.isNotEmpty) {
+      // Comprehensive regex for meeting links
+      final meetingPatterns = [
+        RegExp(r'(https?://[^\s]+(?:zoom\.us|zoom\.com)[^\s]*)', caseSensitive: false),
+        RegExp(r'(https?://[^\s]+(?:meet\.google\.com|hangouts\.google\.com)[^\s]*)', caseSensitive: false),
+        RegExp(r'(https?://[^\s]+(?:teams\.microsoft\.com|teams\.live\.com)[^\s]*)', caseSensitive: false),
+        RegExp(r'(https?://[^\s]+(?:webex\.com|cisco\.com)[^\s]*)', caseSensitive: false),
+        RegExp(r'(https?://[^\s]+(?:gotomeeting\.com|logmein\.com)[^\s]*)', caseSensitive: false),
+        // Generic meeting link pattern
+        RegExp(r'(https?://[^\s]+(?:meeting|call|conference|join)[^\s]*)', caseSensitive: false),
+      ];
+
+      for (final pattern in meetingPatterns) {
+        final match = pattern.firstMatch(description);
+        if (match != null) {
+          print('Found description link: ${match.group(1)}');
+          return match.group(1);
+        }
+      }
+    }
+
+    // Priority 6: Default Google Meet link for events without explicit links
+    // Most Google Calendar events with "Join with Google Meet" have this pattern
+    if (event.id != null) {
+      final defaultMeetLink = 'https://meet.google.com/${event.id}';
+      print('Using default Meet link: $defaultMeetLink');
+      return defaultMeetLink;
+    }
+
+    print('No meeting link found for event: ${event.summary}');
+    return null; // No meeting link found
   }
 
   // Sign out

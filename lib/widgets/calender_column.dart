@@ -12,6 +12,7 @@ class CalendarColumn extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final eventsAsync = ref.watch(todaysEventsProvider);
     final isSignedInAsync = ref.watch(isSignedInProvider);
+    final currentUser = ref.watch(currentUserProvider);
     
     return Container(
       decoration: BoxDecoration(
@@ -21,7 +22,7 @@ class CalendarColumn extends ConsumerWidget {
       ),
       child: Column(
         children: [
-          // Column header
+          // Column header with account switcher
           Container(
             padding: const EdgeInsets.all(AppConstants.paddingMedium),
             decoration: BoxDecoration(
@@ -31,44 +32,105 @@ class CalendarColumn extends ConsumerWidget {
                 topRight: Radius.circular(AppConstants.borderRadiusLarge),
               ),
             ),
-            child: Row(
+            child: Column(
               children: [
-                Container(
-                  width: 12,
-                  height: 12,
-                  decoration: BoxDecoration(
-                    color: Colors.purple[600],
-                    shape: BoxShape.circle,
-                  ),
+                // Title row
+                Row(
+                  children: [
+                    Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: Colors.purple[600],
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        "Today's Events",
+                        style: AppConstants.titleStyle.copyWith(
+                          color: Colors.purple[600],
+                        ),
+                      ),
+                    ),
+                    // Menu button
+                    PopupMenuButton<String>(
+                      onSelected: (value) => _handleMenuAction(context, ref, value),
+                      icon: Icon(
+                        Icons.more_vert,
+                        size: 20,
+                        color: Colors.purple[600],
+                      ),
+                      itemBuilder: (context) => [
+                        const PopupMenuItem(
+                          value: 'switch_account',
+                          child: Row(
+                            children: [
+                              Icon(Icons.switch_account, size: 18),
+                              SizedBox(width: 8),
+                              Text('Switch Account'),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          value: 'refresh',
+                          child: Row(
+                            children: [
+                              Icon(Icons.refresh, size: 18),
+                              SizedBox(width: 8),
+                              Text('Refresh Events'),
+                            ],
+                          ),
+                        ),
+                        if (currentUser != null)
+                          const PopupMenuItem(
+                            value: 'sign_out',
+                            child: Row(
+                              children: [
+                                Icon(Icons.logout, size: 18),
+                                SizedBox(width: 8),
+                                Text('Sign Out'),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    "Today's Events",
-                    style: AppConstants.titleStyle.copyWith(
-                      color: Colors.purple[600],
+                
+                // Current user indicator
+                if (currentUser != null) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.purple[200]!.withOpacity(0.5),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.account_circle,
+                          size: 16,
+                          color: Colors.purple[700],
+                        ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            currentUser,
+                            style: AppConstants.captionStyle.copyWith(
+                              color: Colors.purple[700],
+                              fontSize: 10,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ),
-                // Sign in/out button
-                isSignedInAsync.when(
-                  data: (isSignedIn) => IconButton(
-                    icon: Icon(
-                      isSignedIn ? Icons.logout : Icons.login,
-                      size: 20,
-                      color: Colors.purple[600],
-                    ),
-                    onPressed: () => _handleSignInOut(context, ref, isSignedIn),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                  ),
-                  loading: () => const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                  error: (_, __) => const SizedBox(),
-                ),
+                ],
               ],
             ),
           ),
@@ -82,7 +144,7 @@ class CalendarColumn extends ConsumerWidget {
                 }
                 
                 return eventsAsync.when(
-                  data: (events) => _buildEventsList(events),
+                  data: (events) => _buildEventsList(events, ref),
                   loading: () => const Center(
                     child: CircularProgressIndicator(),
                   ),
@@ -100,6 +162,7 @@ class CalendarColumn extends ConsumerWidget {
                           'Error loading events',
                           style: AppConstants.bodyStyle.copyWith(
                             color: Colors.red[600],
+                            fontSize: 12,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -166,7 +229,7 @@ class CalendarColumn extends ConsumerWidget {
     );
   }
 
-  Widget _buildEventsList(List<CalendarEvent> events) {
+  Widget _buildEventsList(List<CalendarEvent> events, WidgetRef ref) {
     if (events.isEmpty) {
       return Center(
         child: Column(
@@ -182,6 +245,16 @@ class CalendarColumn extends ConsumerWidget {
               'No events today',
               style: AppConstants.bodyStyle.copyWith(
                 color: Colors.grey[500],
+                fontSize: 12,
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextButton.icon(
+              onPressed: () => ref.refresh(todaysEventsProvider),
+              icon: const Icon(Icons.refresh, size: 16),
+              label: const Text('Refresh'),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.purple[600],
               ),
             ),
           ],
@@ -189,13 +262,101 @@ class CalendarColumn extends ConsumerWidget {
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(AppConstants.paddingSmall),
-      itemCount: events.length,
-      itemBuilder: (context, index) {
-        return CalendarEventCard(event: events[index]);
-      },
+    return Column(
+      children: [
+        // Event count header
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          margin: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.purple[100],
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.event,
+                size: 14,
+                color: Colors.purple[600],
+              ),
+              const SizedBox(width: 4),
+              Text(
+                '${events.length} event${events.length == 1 ? '' : 's'} today',
+                style: AppConstants.captionStyle.copyWith(
+                  color: Colors.purple[600],
+                  fontWeight: FontWeight.w600,
+                  fontSize: 11,
+                ),
+              ),
+            ],
+          ),
+        ),
+        
+        // Events list
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingSmall),
+            itemCount: events.length,
+            itemBuilder: (context, index) {
+              return CalendarEventCard(event: events[index]);
+            },
+          ),
+        ),
+      ],
     );
+  }
+
+  Future<void> _handleMenuAction(BuildContext context, WidgetRef ref, String action) async {
+    switch (action) {
+      case 'switch_account':
+        await _switchAccount(context, ref);
+        break;
+      case 'refresh':
+        ref.refresh(todaysEventsProvider);
+        break;
+      case 'sign_out':
+        await _signOut(context, ref);
+        break;
+    }
+  }
+
+  Future<void> _switchAccount(BuildContext context, WidgetRef ref) async {
+    try {
+      // Sign out current account
+      final service = ref.read(googleCalendarServiceProvider);
+      await service.signOut();
+      
+      // Clear current user
+      ref.read(currentUserProvider.notifier).state = null;
+      
+      // Show intermediate state
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Signed out. Choose a different account...'),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+      
+      // Wait a moment for sign out to complete
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      // Sign in with new account
+      await _signIn(context, ref);
+      
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Account switch failed: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _signIn(BuildContext context, WidgetRef ref) async {
@@ -226,14 +387,6 @@ class CalendarColumn extends ConsumerWidget {
           ),
         );
       }
-    }
-  }
-
-  Future<void> _handleSignInOut(BuildContext context, WidgetRef ref, bool isSignedIn) async {
-    if (isSignedIn) {
-      await _signOut(context, ref);
-    } else {
-      await _signIn(context, ref);
     }
   }
 

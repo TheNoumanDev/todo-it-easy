@@ -30,9 +30,6 @@ class CalendarEvent {
     this.status = 'confirmed',
   });
 
-  factory CalendarEvent.fromJson(Map<String, dynamic> json) => _$CalendarEventFromJson(json);
-  Map<String, dynamic> toJson() => _$CalendarEventToJson(this);
-
   bool get isHappening {
     final now = DateTime.now();
     return now.isAfter(startTime) && now.isBefore(endTime);
@@ -58,17 +55,20 @@ class CalendarEvent {
     }
     
     if (eventDay == today) {
-      // Today - just show time
-      return '${_formatTime(startTime)} - ${_formatTime(endTime)}';
+      // Today - show Pakistan time
+      return '${_formatTimePakistan(startTime)} - ${_formatTimePakistan(endTime)}';
     } else {
-      // Other day - show date and time
-      return '${startTime.day}/${startTime.month} ${_formatTime(startTime)}';
+      // Other day - show date and Pakistan time
+      return '${startTime.day}/${startTime.month} ${_formatTimePakistan(startTime)}';
     }
   }
 
-  String _formatTime(DateTime time) {
-    final hour = time.hour;
-    final minute = time.minute.toString().padLeft(2, '0');
+  String _formatTimePakistan(DateTime time) {
+    // Convert to Pakistan time (UTC+5)
+    final pakistanTime = time.add(const Duration(hours: 5));
+    
+    final hour = pakistanTime.hour;
+    final minute = pakistanTime.minute.toString().padLeft(2, '0');
     final period = hour >= 12 ? 'PM' : 'AM';
     final displayHour = hour == 0 ? 12 : (hour > 12 ? hour - 12 : hour);
     return '$displayHour:$minute $period';

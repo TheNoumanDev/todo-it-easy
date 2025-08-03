@@ -93,6 +93,14 @@ class _CalendarEventCardState extends State<CalendarEventCard> {
                 // Description
                 if (widget.event.description.isNotEmpty) ...[
                   Text(
+                    'Description:',
+                    style: AppConstants.captionStyle.copyWith(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 11,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
                     widget.event.description,
                     style: AppConstants.bodyStyle.copyWith(fontSize: 12),
                     maxLines: 3,
@@ -101,74 +109,130 @@ class _CalendarEventCardState extends State<CalendarEventCard> {
                   const SizedBox(height: 8),
                 ],
                 
-                // Location
-                if (widget.event.location != null && widget.event.location!.isNotEmpty) ...[
-                  Row(
-                    children: [
-                      Icon(Icons.location_on, size: 14, color: Colors.grey[600]),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          widget.event.location!,
-                          style: AppConstants.captionStyle,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                // Meeting Link (prominent display)
+                if (widget.event.meetingLink != null && widget.event.meetingLink!.isNotEmpty) ...[
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: _getMeetingButtonColor().withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: _getMeetingButtonColor().withOpacity(0.3)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(_getMeetingIcon(), size: 14, color: _getMeetingButtonColor()),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Meeting Link',
+                              style: AppConstants.captionStyle.copyWith(
+                                color: _getMeetingButtonColor(),
+                                fontWeight: FontWeight.w600,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                ],
-                
-                // Attendees
-                if (widget.event.attendees.isNotEmpty) ...[
-                  Row(
-                    children: [
-                      Icon(Icons.people, size: 14, color: Colors.grey[600]),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${widget.event.attendees.length} attendees',
-                        style: AppConstants.captionStyle,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                ],
-                
-                // Action buttons
-                Row(
-                  children: [
-                    // Join meeting button
-                    if (widget.event.meetingLink != null)
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: () => _launchMeetingLink(),
-                          icon: const Icon(Icons.videocam, size: 16),
-                          label: const Text('Join', style: TextStyle(fontSize: 12)),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue[600],
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            minimumSize: const Size(0, 32),
+                        const SizedBox(height: 6),
+                        // Meeting Link Button (only one button now)
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: () => _launchMeetingLink(),
+                            icon: Icon(_getMeetingIcon(), size: 16),
+                            label: Text('Join ${_getMeetingButtonText()}', style: const TextStyle(fontSize: 12)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: _getMeetingButtonColor(),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                            ),
                           ),
                         ),
-                      ),
-                    
-                    if (widget.event.meetingLink != null) const SizedBox(width: 8),
-                    
-                    // Open in calendar button
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () => _openInCalendar(),
-                        icon: const Icon(Icons.calendar_today, size: 16),
-                        label: const Text('Calendar', style: TextStyle(fontSize: 12)),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          minimumSize: const Size(0, 32),
-                        ),
-                      ),
+                      ],
                     ),
-                  ],
+                  ),
+                  const SizedBox(height: 8),
+                ],
+                
+                // Event Information Section
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[50],
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: Colors.grey[200]!),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Event Information Header
+                      Row(
+                        children: [
+                          Icon(Icons.info_outline, size: 14, color: Colors.grey[600]),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Event Information',
+                            style: AppConstants.captionStyle.copyWith(
+                              color: Colors.grey[700],
+                              fontWeight: FontWeight.w600,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      
+                      // Description (if available)
+                      if (widget.event.description.isNotEmpty) ...[
+                        _buildInfoRow('Description', widget.event.description, Icons.description),
+                        const SizedBox(height: 6),
+                      ],
+                      
+                      // Location (if available)
+                      if (widget.event.location != null && widget.event.location!.isNotEmpty) ...[
+                        _buildInfoRow('Location', widget.event.location!, Icons.location_on),
+                        const SizedBox(height: 6),
+                      ],
+                      
+                      // Attendees (if available)
+                      if (widget.event.attendees.isNotEmpty) ...[
+                        _buildInfoRow(
+                          'Attendees (${widget.event.attendees.length})', 
+                          widget.event.attendees.take(3).join(', ') + 
+                          (widget.event.attendees.length > 3 ? '...' : ''), 
+                          Icons.people
+                        ),
+                        const SizedBox(height: 6),
+                      ],
+                      
+                      // Organizer
+                      _buildInfoRow('Time', widget.event.timeDisplay, Icons.access_time),
+                      
+                      // If no additional info, show a message
+                      if (widget.event.description.isEmpty && 
+                          (widget.event.location == null || widget.event.location!.isEmpty) && 
+                          widget.event.attendees.isEmpty) ...[
+                        Row(
+                          children: [
+                            Icon(Icons.info, size: 12, color: Colors.grey[500]),
+                            const SizedBox(width: 4),
+                            Text(
+                              'No additional details available',
+                              style: AppConstants.captionStyle.copyWith(
+                                color: Colors.grey[500],
+                                fontSize: 10,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
               ],
             ],
@@ -178,14 +242,76 @@ class _CalendarEventCardState extends State<CalendarEventCard> {
     );
   }
 
+  Widget _buildInfoRow(String label, String value, IconData icon) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 12, color: Colors.grey[600]),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: AppConstants.captionStyle.copyWith(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 10,
+                  color: Colors.grey[700],
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: AppConstants.captionStyle.copyWith(
+                  fontSize: 10,
+                  color: Colors.grey[600],
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   Color _getStatusColor() {
     if (widget.event.isPast) return Colors.grey[500]!;
     if (widget.event.isHappening) return Colors.green[600]!;
     return Colors.blue[600]!;
   }
 
+  IconData _getMeetingIcon() {
+    final link = widget.event.meetingLink?.toLowerCase() ?? '';
+    if (link.contains('zoom')) return Icons.videocam;
+    if (link.contains('meet') || link.contains('hangout')) return Icons.video_call;
+    if (link.contains('teams')) return Icons.groups;
+    if (link.contains('webex')) return Icons.video_camera_front;
+    return Icons.videocam; // Default
+  }
+
+  String _getMeetingButtonText() {
+    final link = widget.event.meetingLink?.toLowerCase() ?? '';
+    if (link.contains('zoom')) return 'Zoom';
+    if (link.contains('meet') || link.contains('hangout')) return 'Meet';
+    if (link.contains('teams')) return 'Teams';
+    if (link.contains('webex')) return 'Webex';
+    return 'Join'; // Default
+  }
+
+  Color _getMeetingButtonColor() {
+    final link = widget.event.meetingLink?.toLowerCase() ?? '';
+    if (link.contains('zoom')) return Colors.blue[600]!;
+    if (link.contains('meet') || link.contains('hangout')) return Colors.green[600]!;
+    if (link.contains('teams')) return Colors.purple[600]!;
+    if (link.contains('webex')) return Colors.orange[600]!;
+    return Colors.blue[600]!; // Default
+  }
+
   Future<void> _launchMeetingLink() async {
-    if (widget.event.meetingLink != null) {
+    if (widget.event.meetingLink != null && widget.event.meetingLink!.isNotEmpty) {
       final Uri url = Uri.parse(widget.event.meetingLink!);
       if (await canLaunchUrl(url)) {
         await launchUrl(url, mode: LaunchMode.externalApplication);
@@ -194,9 +320,7 @@ class _CalendarEventCardState extends State<CalendarEventCard> {
   }
 
   Future<void> _openInCalendar() async {
-    // Open Google Calendar in web
-    final startTime = widget.event.startTime.millisecondsSinceEpoch ~/ 1000;
-    final endTime = widget.event.endTime.millisecondsSinceEpoch ~/ 1000;
+    // Open Google Calendar event directly
     final calendarUrl = 'https://calendar.google.com/calendar/event?eid=${widget.event.id}';
     
     final Uri url = Uri.parse(calendarUrl);
